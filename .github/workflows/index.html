@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="description" content="Gestion de stock pour restaurant">
+    <title>RestoStock La Carafe ©2026</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Styles optimisés pour mobile */
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.5;
+            touch-action: manipulation;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 10px;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        /* Onglets */
+        .tabs {
+            display: flex;
+            background: white;
+            margin: 15px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px 5px;
+            border: none;
+            background: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--dark);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .tab i {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        
+        /* Contenu */
+        .content {
+            display: none;
+        }
+        
+        .content.active {
+            display: block;
+        }
+        
+        /* Cartes */
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: var(--primary);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Formulaires */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            -webkit-appearance: none;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+        
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:active {
+            background: #2980b9;
+            transform: scale(0.98);
+        }
+        
+        button.success {
+            background: var(--success);
+        }
+        
+        button.warning {
+            background: var(--warning);
+        }
+        
+        button.danger {
+            background: var(--danger);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        /* Boutons de filtre */
+        .filter-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            flex: 1;
+            min-width: 80px;
+        }
+        
+        /* Recherche */
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        .search-box input {
+            padding-left: 45px;
+        }
+        
+        /* Tableau */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 500px;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        
+        th {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Statut stock */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status.good {
+            background: rgba(39, 174, 96, 0.1);
+            color: var(--success);
+        }
+        
+        .status.warning {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+        
+        .status.danger {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+        }
+        
+        /* Alertes */
+        .alert {
+            background: #f8d7da;
+            border-left: 4px solid var(--danger);
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Statistiques */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--dark);
+        }
+        
+        /* Liste produits */
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .product-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.3rem;
+            color: var(--primary);
+        }
+        
+        .close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--dark);
+            cursor: pointer;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000;
+            display: none;
+            text-align: center;
+            max-width: 90%;
+        }
+        
+        /* Résumé statistiques */
+        .summary-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* Responsive */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 700px;
+                margin: 0 auto;
+            }
+            
+            .buttons, .filter-buttons {
+                flex-direction: row;
+            }
+            
+            button, .filter-btn {
+                width: auto;
+                padding: 12px 20px;
+            }
+            
+            .filter-btn {
+                padding: 8px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <h1><i class="fas fa-utensils"></i> RestoStock La Carafe ©2026</h1>
+        </div>
+        
+        <!-- Notification -->
+        <div class="notification" id="notification"></div>
+        
+        <!-- Onglets -->
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">
+                <i class="fas fa-home"></i> Tableau
+            </button>
+            <button class="tab" data-tab="movements">
+                <i class="fas fa-exchange-alt"></i> Mouvements
+            </button>
+            <button class="tab" data-tab="products">
+                <i class="fas fa-boxes"></i> Produits
+            </button>
+            <button class="tab" data-tab="stats">
+                <i class="fas fa-chart-bar"></i> Statistiques
+            </button>
+        </div>
+        
+        <!-- Alerte stock bas -->
+        <div class="alert" id="stockAlert" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Alerte!</strong> 
+                <span id="alertCount">0 produits</span> sous le stock minimum
+            </div>
+        </div>
+        
+        <!-- Tableau de bord -->
+        <div id="dashboard" class="content active">
+            <div class="card">
+                <h2><i class="fas fa-tachometer-alt"></i> Vue d'ensemble</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Produits</div>
+                        <div class="stat-value" id="totalProducts">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Valeur stock</div>
+                        <div class="stat-value" id="totalValue">0 CFA</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Sous minimum</div>
+                        <div class="stat-value" id="lowStock">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Mouvements</div>
+                        <div class="stat-value" id="todayMovements">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-bell"></i> Alertes</h2>
+                <div id="alertsList">
+                    <p style="text-align: center; padding: 20px; color: #777;">
+                        Aucune alerte
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mouvements -->
+        <div id="movements" class="content">
+            <div class="card">
+                <h2><i class="fas fa-edit"></i> Nouveau mouvement</h2>
+                
+                <form id="movementForm">
+                    <div class="form-group">
+                        <label for="movementDate">Date</label>
+                        <input type="date" id="movementDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="movementProduct">Produit</label>
+                        <select id="movementProduct" required>
+                            <option value="">Choisir un produit</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="movementType">Type</label>
+                        <select id="movementType" required>
+                            <option value="entry">Entrée (achat)</option>
+                            <option value="exit">Sortie (consommation)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="movementQuantity">Quantité</label>
+                        <input type="number" id="movementQuantity" min="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="movementPrice">Prix unitaire (CFA)</label>
+                        <input type="number" id="movementPrice" min="0" required>
+                    </div>
+                    
+                    <div class="buttons">
+                        <button type="submit" class="success">
+                            <i class="fas fa-save"></i> Enregistrer
+                        </button>
+                        <button type="button" id="resetMovement">
+                            <i class="fas fa-redo"></i> Effacer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Produits -->
+        <div id="products" class="content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2><i class="fas fa-boxes"></i> Stock actuel</h2>
+                    <button id="addProduct" style="width: auto; padding: 8px 15px;">
+                        <i class="fas fa-plus"></i> Ajouter
+                    </button>
+                </div>
+                
+                <!-- Filtres et recherche -->
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">
+                        <i class="fas fa-list"></i> Tous
+                    </button>
+                    <button class="filter-btn success" data-filter="good">
+                        <i class="fas fa-check-circle"></i> OK
+                    </button>
+                    <button class="filter-btn warning" data-filter="warning">
+                        <i class="fas fa-exclamation-circle"></i> Minimum
+                    </button>
+                    <button class="filter-btn danger" data-filter="danger">
+                        <i class="fas fa-exclamation-triangle"></i> Bas
+                    </button>
+                </div>
+                
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="productSearch" placeholder="Rechercher un produit...">
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Stock</th>
+                                <th>Statut</th>
+                                <th>Valeur</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTable">
+                            <!-- Rempli dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 15px; text-align: center;">
+                    <small id="productCount" style="color: #777;">0 produits affichés</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistiques -->
+        <div id="stats" class="content">
+            <div class="card">
+                <h2><i class="fas fa-chart-bar"></i> Statistiques par période</h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label for="startDate">Du</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">Au</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+                
+                <button id="generateStats">
+                    <i class="fas fa-chart-pie"></i> Générer les statistiques
+                </button>
+                
+                <div id="statsResults" style="margin-top: 20px; display: none;">
+                    <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Résultats</h3>
+                    <div id="statsContent"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-calculator"></i> Valorisation</h2>
+                <div class="form-group">
+                    <label for="productSelect">Choisir un produit</label>
+                    <select id="productSelect">
+                        <option value="">Sélectionner un produit</option>
+                    </select>
+                </div>
+                
+                <div id="valuationResult" style="padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <small>Stock actuel</small>
+                            <div id="valStock" style="font-weight: bold; font-size: 1.2rem;">0</div>
+                        </div>
+                        <div>
+                            <small>Valeur totale</small>
+                            <div id="valTotal" style="font-weight: bold; font-size: 1.2rem; color: var(--success);">0 CFA</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Ajout Produit -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nouveau produit</h3>
+                <button class="close">&times;</button>
+            </div>
+            
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="productName">Désignation *</label>
+                    <input type="text" id="productName" placeholder="Ex: Tomates" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productUnit">Unité *</label>
+                    <select id="productUnit" required>
+                        <option value="">Choisir une unité</option>
+                        <option value="kg">kg</option>
+                        <option value="g">g</option>
+                        <option value="L">L</option>
+                        <option value="mL">mL</option>
+                        <option value="unité">Unité</option>
+                        <option value="paquet">Paquet</option>
+                        <option value="bouteille">Bouteille</option>
+                        <option value="carton">Carton</option>
+                        <option value="sac">Sac</option>
+                    </select>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label for="minStock">Stock minimum *</label>
+                        <input type="number" id="minStock" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="initialStock">Stock initial</label>
+                        <input type="number" id="initialStock" min="0" value="0">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productPrice">Prix unitaire (CFA)</label>
+                    <input type="number" id="productPrice" min="0" value="0">
+                </div>
+                
+                <button type="submit" class="success">
+                    <i class="fas fa-plus-circle"></i> Ajouter le produit
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Données de l'application
+        let stockData = JSON.parse(localStorage.getItem('restoStockData')) || {
+            products: [
+                { id: 1, name: "Tomates", unit: "kg", min: 10, stock: 15, price: 350 },
+                { id: 2, name: "Riz", unit: "kg", min: 20, stock: 5, price: 500 },
+                { id: 3, name: "Huile d'olive", unit: "L", min: 5, stock: 8, price: 1200 },
+                { id: 4, name: "Fromage râpé", unit: "kg", min: 8, stock: 8, price: 2500 },
+                { id: 5, name: "Poulet", unit: "kg", min: 15, stock: 20, price: 1800 },
+                { id: 6, name: "Oignons", unit: "kg", min: 5, stock: 3, price: 300 },
+                { id: 7, name: "Pain baguette", unit: "unité", min: 30, stock: 25, price: 100 },
+                { id: 8, name: "Café moulu", unit: "kg", min: 3, stock: 2, price: 4500 },
+                { id: 9, name: "Sucre", unit: "kg", min: 10, stock: 12, price: 600 },
+                { id: 10, name: "Lait", unit: "L", min: 20, stock: 15, price: 700 }
+            ],
+            movements: []
+        };
+
+        // Variables globales
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        // Fonctions utilitaires
+        function getToday() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatCFA(amount) {
+            return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " CFA";
+        }
+
+        function showMessage(text, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = text;
+            notification.style.background = type === 'success' ? 'var(--success)' : 'var(--danger)';
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Déterminer le statut d'un produit
+        function getProductStatus(product) {
+            if (product.stock > product.min) {
+                return { class: 'good', text: 'OK', icon: 'fa-check-circle' };
+            } else if (product.stock === product.min) {
+                return { class: 'warning', text: 'Minimum', icon: 'fa-exclamation-circle' };
+            } else {
+                return { class: 'danger', text: 'Bas', icon: 'fa-exclamation-triangle' };
+            }
+        }
+
+        // Initialisation
+        function init() {
+            console.log('Initialisation de l\'application...');
+            
+            // Dates par défaut
+            const today = getToday();
+            document.getElementById('movementDate').value = today;
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+            
+            // Ajouter quelques mouvements d'exemple
+            if (stockData.movements.length === 0) {
+                addSampleMovements();
+            }
+            
+            // Charger les données
+            loadProducts();
+            updateDashboard();
+            
+            // Événements
+            setupEvents();
+            
+            console.log('Application initialisée');
+        }
+
+        // Ajouter des mouvements d'exemple
+        function addSampleMovements() {
+            const today = getToday();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            stockData.movements = [
+                // Aujourd'hui
+                { id: 1, date: today, productId: 2, type: 'entry', quantity: 10, price: 500, productName: 'Riz' },
+                { id: 2, date: today, productId: 5, type: 'exit', quantity: 3, price: 1800, productName: 'Poulet' },
+                { id: 3, date: today, productId: 7, type: 'exit', quantity: 8, price: 100, productName: 'Pain baguette' },
+                { id: 4, date: today, productId: 1, type: 'entry', quantity: 5, price: 350, productName: 'Tomates' },
+                
+                // Hier
+                { id: 5, date: yesterdayStr, productId: 2, type: 'entry', quantity: 5, price: 500, productName: 'Riz' },
+                { id: 6, date: yesterdayStr, productId: 2, type: 'entry', quantity: 8, price: 500, productName: 'Riz' },
+                { id: 7, date: yesterdayStr, productId: 3, type: 'exit', quantity: 2, price: 1200, productName: 'Huile d\'olive' },
+                { id: 8, date: yesterdayStr, productId: 6, type: 'entry', quantity: 15, price: 300, productName: 'Oignons' },
+                { id: 9, date: yesterdayStr, productId: 8, type: 'entry', quantity: 2, price: 4500, productName: 'Café moulu' },
+                
+                // Avant-hier
+                { id: 10, date: '2024-01-10', productId: 2, type: 'entry', quantity: 12, price: 500, productName: 'Riz' },
+                { id: 11, date: '2024-01-10', productId: 4, type: 'entry', quantity: 4, price: 2500, productName: 'Fromage râpé' },
+                { id: 12, date: '2024-01-10', productId: 9, type: 'entry', quantity: 6, price: 600, productName: 'Sucre' }
+            ];
+            
+            saveData();
+        }
+
+        // Charger les produits dans les selects
+        function loadProducts() {
+            const selects = ['movementProduct', 'productSelect'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                
+                select.innerHTML = '<option value="">Choisir un produit</option>';
+                stockData.products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.name} (${product.stock} ${product.unit})`;
+                    select.appendChild(option);
+                });
+            });
+            
+            updateProductsTable();
+        }
+
+        // Mettre à jour le tableau des produits avec filtres
+        function updateProductsTable() {
+            const tbody = document.getElementById('productsTable');
+            const countElement = document.getElementById('productCount');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            // Filtrer les produits
+            let filteredProducts = stockData.products.filter(product => {
+                // Filtre par statut
+                const status = getProductStatus(product);
+                let statusMatch = true;
+                
+                if (currentFilter === 'good') {
+                    statusMatch = status.class === 'good';
+                } else if (currentFilter === 'warning') {
+                    statusMatch = status.class === 'warning';
+                } else if (currentFilter === 'danger') {
+                    statusMatch = status.class === 'danger';
+                }
+                
+                // Filtre par recherche
+                const searchMatch = !currentSearch || 
+                    product.name.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    product.unit.toLowerCase().includes(currentSearch.toLowerCase());
+                
+                return statusMatch && searchMatch;
+            });
+            
+            // Trier par statut (bas en premier, puis minimum, puis OK)
+            filteredProducts.sort((a, b) => {
+                const statusA = getProductStatus(a).class;
+                const statusB = getProductStatus(b).class;
+                
+                const order = { 'danger': 0, 'warning': 1, 'good': 2 };
+                return order[statusA] - order[statusB];
+            });
+            
+            // Afficher les produits filtrés
+            filteredProducts.forEach(product => {
+                const value = product.stock * product.price;
+                const status = getProductStatus(product);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <strong>${product.name}</strong><br>
+                        <small>Min: ${product.min} ${product.unit} | Prix: ${formatCFA(product.price)}</small>
+                    </td>
+                    <td>${product.stock} ${product.unit}</td>
+                    <td>
+                        <span class="status ${status.class}">
+                            <i class="fas ${status.icon}"></i> ${status.text}
+                        </span>
+                    </td>
+                    <td>${formatCFA(value)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Mettre à jour le compteur
+            countElement.textContent = `${filteredProducts.length} produit${filteredProducts.length !== 1 ? 's' : ''} affiché${filteredProducts.length !== 1 ? 's' : ''}`;
+        }
+
+        // Mettre à jour le tableau de bord
+        function updateDashboard() {
+            // Totaux
+            document.getElementById('totalProducts').textContent = stockData.products.length;
+            
+            const totalValue = stockData.products.reduce((sum, p) => sum + (p.stock * p.price), 0);
+            document.getElementById('totalValue').textContent = formatCFA(totalValue);
+            
+            const lowStock = stockData.products.filter(p => p.stock < p.min).length;
+            document.getElementById('lowStock').textContent = lowStock;
+            
+            const todayMovements = stockData.movements.filter(m => m.date === getToday()).length;
+            document.getElementById('todayMovements').textContent = todayMovements;
+            
+            // Alertes
+            const alertDiv = document.getElementById('stockAlert');
+            const alertCount = document.getElementById('alertCount');
+            const alertsList = document.getElementById('alertsList');
+            
+            if (lowStock > 0) {
+                alertDiv.style.display = 'flex';
+                alertCount.textContent = `${lowStock} produit${lowStock > 1 ? 's' : ''}`;
+                
+                let alertsHTML = '';
+                stockData.products
+                    .filter(p => p.stock < p.min)
+                    .forEach(p => {
+                        const needed = p.min - p.stock;
+                        alertsHTML += `
+                            <div class="product-item">
+                                <div>
+                                    <strong>${p.name}</strong><br>
+                                    <small>Stock: ${p.stock} ${p.unit} | Manque: ${needed} ${p.unit}</small>
+                                </div>
+                                <div style="color: var(--danger);">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        `;
+                    });
+                alertsList.innerHTML = alertsHTML;
+            } else {
+                alertDiv.style.display = 'none';
+                alertsList.innerHTML = '<p style="text-align: center; padding: 20px; color: #777;">Aucune alerte</p>';
+            }
+        }
+
+        // Configurer les événements
+        function setupEvents() {
+            // Onglets
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+            
+            // Formulaire mouvement
+            document.getElementById('movementForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const productId = parseInt(this.movementProduct.value);
+                const type = this.movementType.value;
+                const quantity = parseInt(this.movementQuantity.value);
+                const price = parseInt(this.movementPrice.value);
+                const date = this.movementDate.value;
+                
+                if (!productId || !quantity || !price) {
+                    showMessage('Veuillez remplir tous les champs', 'danger');
+                    return;
+                }
+                
+                const product = stockData.products.find(p => p.id === productId);
+                if (!product) {
+                    showMessage('Produit non trouvé', 'danger');
+                    return;
+                }
+                
+                // Mettre à jour le stock
+                if (type === 'entry') {
+                    product.stock += quantity;
+                } else {
+                    if (product.stock < quantity) {
+                        showMessage(`Stock insuffisant! Stock actuel: ${product.stock} ${product.unit}`, 'danger');
+                        return;
+                    }
+                    product.stock -= quantity;
+                }
+                
+                // Mettre à jour le prix si différent
+                if (price > 0 && price !== product.price) {
+                    product.price = price;
+                }
+                
+                // Enregistrer le mouvement
+                stockData.movements.push({
+                    id: stockData.movements.length + 1,
+                    date: date,
+                    productId: productId,
+                    type: type,
+                    quantity: quantity,
+                    price: price,
+                    productName: product.name
+                });
+                
+                // Sauvegarder
+                saveData();
+                
+                // Mettre à jour l'interface
+                loadProducts();
+                updateDashboard();
+                
+                // Réinitialiser le formulaire
+                this.reset();
+                this.movementDate.value = getToday();
+                
+                showMessage('Mouvement enregistré avec succès!');
+            });
+            
+            // Réinitialiser formulaire mouvement
+            document.getElementById('resetMovement').addEventListener('click', function() {
+                document.getElementById('movementForm').reset();
+                document.getElementById('movementDate').value = getToday();
+            });
+            
+            // Modal produit
+            document.getElementById('addProduct').addEventListener('click', () => {
+                document.getElementById('productModal').style.display = 'flex';
+            });
+            
+            document.querySelectorAll('.close').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.getElementById('productModal').style.display = 'none';
+                });
+            });
+            
+            // Fermer modal en cliquant à l'extérieur
+            document.getElementById('productModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+            
+            // Formulaire produit
+            document.getElementById('productForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = this.productName.value.trim();
+                const unit = this.productUnit.value;
+                const min = parseInt(this.minStock.value);
+                const stock = parseInt(this.initialStock.value) || 0;
+                const price = parseInt(this.productPrice.value) || 0;
+                
+                if (!name || !unit || isNaN(min)) {
+                    showMessage('Veuillez remplir les champs obligatoires', 'danger');
+                    return;
+                }
+                
+                // Vérifier si existe déjà
+                if (stockData.products.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                    showMessage('Ce produit existe déjà', 'danger');
+                    return;
+                }
+                
+                // Ajouter le produit
+                const newProduct = {
+                    id: stockData.products.length > 0 ? Math.max(...stockData.products.map(p => p.id)) + 1 : 1,
+                    name: name,
+                    unit: unit,
+                    min: min,
+                    stock: stock,
+                    price: price
+                };
+                
+                stockData.products.push(newProduct);
+                saveData();
+                
+                // Mettre à jour l'interface
+                loadProducts();
+                updateDashboard();
+                
+                // Fermer modal et réinitialiser
+                document.getElementById('productModal').style.display = 'none';
+                this.reset();
+                
+                showMessage('Produit ajouté avec succès!');
+            });
+            
+            // Valorisation produit
+            document.getElementById('productSelect').addEventListener('change', function() {
+                const productId = parseInt(this.value);
+                const resultDiv = document.getElementById('valuationResult');
+                
+                if (!productId) {
+                    resultDiv.style.display = 'none';
+                    return;
+                }
+                
+                const product = stockData.products.find(p => p.id === productId);
+                if (product) {
+                    document.getElementById('valStock').textContent = `${product.stock} ${product.unit}`;
+                    document.getElementById('valTotal').textContent = formatCFA(product.stock * product.price);
+                    resultDiv.style.display = 'block';
+                }
+            });
+            
+            // Filtres de produits
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentFilter = this.dataset.filter;
+                    updateProductsTable();
+                });
+            });
+            
+            // Recherche de produits
+            document.getElementById('productSearch').addEventListener('input', function() {
+                currentSearch = this.value;
+                updateProductsTable();
+            });
+            
+            // Statistiques
+            document.getElementById('generateStats').addEventListener('click', function() {
+                const start = document.getElementById('startDate').value;
+                const end = document.getElementById('endDate').value;
+                
+                if (!start || !end) {
+                    showMessage('Veuillez sélectionner une période', 'danger');
+                    return;
+                }
+                
+                if (start > end) {
+                    showMessage('La date de début doit être avant la date de fin', 'danger');
+                    return;
+                }
+                
+                // Filtrer les mouvements de la période
+                const periodMovements = stockData.movements.filter(m => {
+                    return m.date >= start && m.date <= end;
+                });
+                
+                if (periodMovements.length === 0) {
+                    document.getElementById('statsContent').innerHTML = `
+                        <p style="text-align: center; padding: 20px; color: #777;">
+                            Aucun mouvement trouvé pour cette période
+                        </p>
+                    `;
+                    document.getElementById('statsResults').style.display = 'block';
+                    return;
+                }
+                
+                // Analyser les données
+                const purchasesByProduct = {};  // Achats (entrées)
+                const consumptionByProduct = {}; // Consommations (sorties)
+                
+                periodMovements.forEach(movement => {
+                    if (movement.type === 'entry') {
+                        // Achats
+                        if (!purchasesByProduct[movement.productId]) {
+                            purchasesByProduct[movement.productId] = {
+                                count: 0,
+                                totalQuantity: 0,
+                                totalValue: 0,
+                                name: movement.productName
+                            };
+                        }
+                        purchasesByProduct[movement.productId].count++;
+                        purchasesByProduct[movement.productId].totalQuantity += movement.quantity;
+                        purchasesByProduct[movement.productId].totalValue += movement.quantity * movement.price;
+                    } else {
+                        // Consommations
+                        if (!consumptionByProduct[movement.productId]) {
+                            consumptionByProduct[movement.productId] = {
+                                totalQuantity: 0,
+                                totalValue: 0,
+                                name: movement.productName
+                            };
+                        }
+                        consumptionByProduct[movement.productId].totalQuantity += movement.quantity;
+                        consumptionByProduct[movement.productId].totalValue += movement.quantity * movement.price;
+                    }
+                });
+                
+                // Convertir en tableaux et trier
+                const topPurchases = Object.values(purchasesByProduct)
+                    .sort((a, b) => b.count - a.count || b.totalValue - a.totalValue);
+                
+                const topConsumptions = Object.values(consumptionByProduct)
+                    .sort((a, b) => b.totalQuantity - a.totalQuantity || b.totalValue - a.totalValue);
+                
+                // Afficher les résultats
+                let statsHTML = '';
+                
+                // Résumé
+                const totalPurchases = periodMovements.filter(m => m.type === 'entry').length;
+                const totalConsumptions = periodMovements.filter(m => m.type === 'exit').length;
+                const totalPurchasesValue = periodMovements
+                    .filter(m => m.type === 'entry')
+                    .reduce((sum, m) => sum + (m.quantity * m.price), 0);
+                const totalConsumptionsValue = periodMovements
+                    .filter(m => m.type === 'exit')
+                    .reduce((sum, m) => sum + (m.quantity * m.price), 0);
+                
+                statsHTML += `
+                    <div class="summary-card">
+                        <h4 style="margin-bottom: 10px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-clipboard-list"></i> Résumé de la période
+                        </h4>
+                        <div class="summary-item">
+                            <span>Période analysée</span>
+                            <strong>${start} au ${end}</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Nombre total de mouvements</span>
+                            <strong>${periodMovements.length}</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Nombre d'achats (entrées)</span>
+                            <strong style="color: var(--secondary);">${totalPurchaces}</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Valeur totale des achats</span>
+                            <strong style="color: var(--secondary);">${formatCFA(totalPurchasesValue)}</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Nombre de consommations (sorties)</span>
+                            <strong style="color: var(--danger);">${totalConsumptions}</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Valeur totale consommée</span>
+                            <strong style="color: var(--danger);">${formatCFA(totalConsumptionsValue)}</strong>
+                        </div>
+                    </div>
+                `;
+                
+                // Achats (nombre de fois acheté) - DÉTAILLÉ
+                if (topPurchases.length > 0) {
+                    statsHTML += `
+                        <div class="card" style="margin-top: 15px;">
+                            <h4 style="margin-bottom: 10px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-shopping-cart"></i> Détail des achats par produit
+                            </h4>
+                            <small style="color: #777; display: block; margin-bottom: 10px;">
+                                Nombre de fois où chaque produit a été acheté
+                            </small>
+                    `;
+                    
+                    topPurchases.forEach((item, index) => {
+                        statsHTML += `
+                            <div class="product-item" style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
+                                <div>
+                                    <strong>${item.name}</strong><br>
+                                    <small>
+                                        Acheté <strong style="color: var(--secondary);">${item.count} fois</strong><br>
+                                        Quantité totale: ${item.totalQuantity} | Valeur totale: ${formatCFA(item.totalValue)}
+                                    </small>
+                                </div>
+                                <div style="text-align: center; min-width: 60px;">
+                                    <div style="color: var(--secondary); font-weight: bold; font-size: 1.2rem;">
+                                        ${item.count}
+                                    </div>
+                                    <small style="color: #777; font-size: 0.8rem;">fois</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    statsHTML += `</div>`;
+                }
+                
+                // Consommations
+                if (topConsumptions.length > 0) {
+                    statsHTML += `
+                        <div class="card" style="margin-top: 15px;">
+                            <h4 style="margin-bottom: 10px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-utensils"></i> Détail des consommations par produit
+                            </h4>
+                            <small style="color: #777; display: block; margin-bottom: 10px;">
+                                Quantité consommée de chaque produit
+                            </small>
+                    `;
+                    
+                    topConsumptions.forEach((item, index) => {
+                        statsHTML += `
+                            <div class="product-item" style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
+                                <div>
+                                    <strong>${item.name}</strong><br>
+                                    <small>
+                                        Consommé: ${item.totalQuantity}<br>
+                                        Valeur totale: ${formatCFA(item.totalValue)}
+                                    </small>
+                                </div>
+                                <div style="text-align: center; min-width: 60px;">
+                                    <div style="color: var(--danger); font-weight: bold; font-size: 1.2rem;">
+                                        ${item.totalQuantity}
+                                    </div>
+                                    <small style="color: #777; font-size: 0.8rem;">quantité</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    statsHTML += `</div>`;
+                }
+                
+                document.getElementById('statsContent').innerHTML = statsHTML;
+                document.getElementById('statsResults').style.display = 'block';
+            });
+        }
+
+        // Sauvegarder les données
+        function saveData() {
+            try {
+                localStorage.setItem('restoStockData', JSON.stringify(stockData));
+                console.log('Données sauvegardées');
+            } catch (e) {
+                console.error('Erreur sauvegarde:', e);
+                showMessage('Erreur de sauvegarde', 'danger');
+            }
+        }
+
+        // Démarrer l'application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
