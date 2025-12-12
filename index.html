@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestoStock CFA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #f5f7fa; padding: 20px; }
+        .login-screen { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .app-content { display: none; }
+        input, button, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; }
+        button { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #2980b9; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .tabs { display: flex; background: white; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; }
+        .tab.active { background: #3498db; color: white; }
+        .content { background: white; padding: 20px; border-radius: 8px; display: none; }
+        .content.active { display: block; }
+        .product-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .alert { background: #f8d7da; border-left: 4px solid #e74c3c; padding: 15px; margin: 10px 0; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <!-- Écran de connexion -->
+    <div id="loginScreen" class="login-screen">
+        <h2 style="text-align: center; color: #2c3e50; margin-bottom: 20px;">
+            <i class="fas fa-utensils"></i> RestoStock CFA
+        </h2>
+        <p style="text-align: center; color: #666; margin-bottom: 20px;">
+            Gestion de stock pour restaurant
+        </p>
+        
+        <input type="text" id="restaurantName" placeholder="Nom de votre restaurant" value="Mon Restaurant">
+        <input type="password" id="accessCode" placeholder="Code d'accès (4 chiffres)" value="1234">
+        
+        <div id="loginMessage" style="color: red; padding: 10px; display: none;"></div>
+        
+        <button id="loginButton">
+            <i class="fas fa-sign-in-alt"></i> Commencer
+        </button>
+        
+        <p style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9rem;">
+            <i class="fas fa-info-circle"></i> Les données seront synchronisées sur tous vos appareils
+        </p>
+    </div>
+
+    <!-- Application principale -->
+    <div id="appContent" class="app-content">
+        <!-- En-tête -->
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1><i class="fas fa-utensils"></i> <span id="restaurantTitle">RestoStock</span></h1>
+                <button id="logoutBtn" style="width: auto; padding: 8px 15px; background: #e74c3c;">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </button>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.9rem;">
+                <span id="syncStatus" style="background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 20px;">
+                    <i class="fas fa-check-circle"></i> Connecté
+                </span>
+            </div>
+        </div>
+
+        <!-- Onglets -->
+        <div class="tabs">
+            <div class="tab active" data-tab="dashboard">
+                <i class="fas fa-home"></i><br>Tableau
+            </div>
+            <div class="tab" data-tab="products">
+                <i class="fas fa-boxes"></i><br>Produits
+            </div>
+            <div class="tab" data-tab="movements">
+                <i class="fas fa-exchange-alt"></i><br>Mouvements
+            </div>
+            <div class="tab" data-tab="stats">
+                <i class="fas fa-chart-bar"></i><br>Stats
+            </div>
+        </div>
+
+        <!-- Contenu -->
+        <div id="dashboard" class="content active">
+            <h3><i class="fas fa-tachometer-alt"></i> Tableau de bord</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0;">
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.9rem; color: #666;">Produits</div>
+                    <div id="totalProducts" style="font-size: 1.8rem; font-weight: bold; color: #2c3e50;">0</div>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.9rem; color: #666;">Valeur stock</div>
+                    <div id="totalValue" style="font-size: 1.8rem; font-weight: bold; color: #27ae60;">0 CFA</div>
+                </div>
+            </div>
+
+            <div id="alertsContainer"></div>
+        </div>
+
+        <div id="products" class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3><i class="fas fa-boxes"></i> Produits en stock</h3>
+                <button id="addProductBtn" style="width: auto; padding: 8px 15px;">
+                    <i class="fas fa-plus"></i> Ajouter
+                </button>
+            </div>
+            
+            <div id="productsList">
+                <!-- Produits chargés dynamiquement -->
+            </div>
+        </div>
+
+        <div id="movements" class="content">
+            <h3><i class="fas fa-exchange-alt"></i> Nouveau mouvement</h3>
+            
+            <form id="movementForm">
+                <input type="date" id="movementDate">
+                <select id="movementProduct">
+                    <option value="">Sélectionner un produit</option>
+                </select>
+                <select id="movementType">
+                    <option value="entry">Entrée (achat)</option>
+                    <option value="exit">Sortie (consommation)</option>
+                </select>
+                <input type="number" id="movementQuantity" placeholder="Quantité" min="1">
+                <input type="number" id="movementPrice" placeholder="Prix unitaire (CFA)" min="0">
+                
+                <button type="submit" style="background: #27ae60;">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+            </form>
+        </div>
+
+        <div id="stats" class="content">
+            <h3><i class="fas fa-chart-bar"></i> Statistiques</h3>
+            <p style="color: #666; margin: 20px 0;">
+                Sélectionnez une période pour analyser vos achats et consommations.
+            </p>
+            <button id="showStatsBtn">Générer les statistiques</button>
+        </div>
+    </div>
+
+    <!-- Modal Ajout Produit -->
+    <div id="productModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Nouveau produit</h3>
+                <button id="closeModal" style="width: auto; background: none; color: #666; font-size: 1.5rem;">&times;</button>
+            </div>
+            
+            <form id="productForm">
+                <input type="text" id="productName" placeholder="Désignation (ex: Tomates)" required>
+                <select id="productUnit" required>
+                    <option value="">Unité</option>
+                    <option value="kg">kg</option>
+                    <option value="g">g</option>
+                    <option value="L">L</option>
+                    <option value="unité">Unité</option>
+                </select>
+                <input type="number" id="minStock" placeholder="Stock minimum" min="0" required>
+                <input type="number" id="initialStock" placeholder="Stock initial" min="0" value="0">
+                <input type="number" id="productPrice" placeholder="Prix unitaire (CFA)" min="0" value="0">
+                
+                <button type="submit" style="background: #27ae60;">
+                    <i class="fas fa-plus-circle"></i> Ajouter
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION FIREBASE ====================
+        // À REMPLACER APRÈS AVOIR CRÉÉ VOTRE PROJET FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTc3ECVhZcFr1gOF7FHoSS1eMeWTUY17k",
+            authDomain: "restostock-cfa.firebaseapp.com",
+            databaseURL: "https://restostock-cfa-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "restostock-cfa",
+            storageBucket: "restostock-cfa.firebasestorage.app",
+            messagingSenderId: "158313169828",
+            appId: "1:158313169828:web:7aace5e1acfccf7c1b7731"
+        };
+        // ================================================================
+
+        // Variables globales
+        let currentRestaurant = null;
+        let stockData = {
+            products: [],
+            movements: [],
+            settings: {}
+        };
+
+        // Initialiser Firebase (uniquement si config valide)
+        let firebaseInitialized = false;
+        try {
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyDummyKey1234567890abcdefghijklmn") {
+                firebase.initializeApp(firebaseConfig);
+                firebaseInitialized = true;
+                console.log("Firebase initialisé");
+            } else {
+                console.log("Mode local activé (config Firebase manquante)");
+            }
+        } catch (error) {
+            console.log("Mode local: " + error.message);
+        }
+
+        // Fonctions utilitaires
+        function formatCFA(amount) {
+            return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " CFA";
+        }
+
+        function showLoginMessage(text, isError = true) {
+            const msg = document.getElementById('loginMessage');
+            msg.textContent = text;
+            msg.style.color = isError ? '#e74c3c' : '#27ae60';
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+
+        // Connexion
+        document.getElementById('loginButton').addEventListener('click', async function() {
+            const name = document.getElementById('restaurantName').value.trim();
+            const code = document.getElementById('accessCode').value.trim();
+
+            if (!name || !code || code.length < 4) {
+                showLoginMessage('Nom et code (4+ chiffres) requis');
+                return;
+            }
+
+            // Créer ID unique
+            const restaurantId = btoa(name + ':' + code).replace(/[+/=]/g, '');
+            
+            try {
+                if (firebaseInitialized) {
+                    // Mode Firebase
+                    const ref = firebase.database().ref('restaurants/' + restaurantId);
+                    const snapshot = await ref.once('value');
+                    
+                    if (snapshot.exists()) {
+                        stockData = snapshot.val();
+                        showLoginMessage('Connexion réussie!', false);
+                    } else {
+                        // Nouveau restaurant
+                        stockData = {
+                            products: [
+                                { id: 1, name: "Tomates", unit: "kg", min: 10, stock: 15, price: 350 },
+                                { id: 2, name: "Riz", unit: "kg", min: 20, stock: 5, price: 500 },
+                                { id: 3, name: "Huile", unit: "L", min: 5, stock: 8, price: 1200 }
+                            ],
+                            movements: [],
+                            settings: { name: name, code: code }
+                        };
+                        await ref.set(stockData);
+                        showLoginMessage('Nouveau restaurant créé!', false);
+                    }
+                } else {
+                    // Mode local
+                    stockData = {
+                        products: [
+                            { id: 1, name: "Tomates", unit: "kg", min: 10, stock: 15, price: 350 },
+                            { id: 2, name: "Riz", unit: "kg", min: 20, stock: 5, price: 500 }
+                        ],
+                        movements: [],
+                        settings: { name: name, code: code }
+                    };
+                    showLoginMessage('Mode local activé', false);
+                }
+
+                currentRestaurant = { id: restaurantId, name: name, code: code };
+                localStorage.setItem('currentRestaurant', JSON.stringify(currentRestaurant));
+                
+                // Afficher l'application
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                document.getElementById('restaurantTitle').textContent = name;
+                
+                updateUI();
+                loadProducts();
+                
+            } catch (error) {
+                showLoginMessage('Erreur: ' + error.message);
+            }
+        });
+
+        // Mettre à jour l'interface
+        function updateUI() {
+            // Mettre à jour les compteurs
+            document.getElementById('totalProducts').textContent = stockData.products.length;
+            
+            const totalValue = stockData.products.reduce((sum, p) => sum + (p.stock * p.price), 0);
+            document.getElementById('totalValue').textContent = formatCFA(totalValue);
+            
+            // Alertes
+            const lowStock = stockData.products.filter(p => p.stock < p.min);
+            const alertsContainer = document.getElementById('alertsContainer');
+            
+            if (lowStock.length > 0) {
+                let alertsHTML = '<div class="alert"><strong><i class="fas fa-exclamation-triangle"></i> Alertes Stock Bas</strong><br>';
+                lowStock.forEach(p => {
+                    alertsHTML += `<div style="margin-top: 10px;">${p.name}: ${p.stock} ${p.unit} (min: ${p.min})</div>`;
+                });
+                alertsHTML += '</div>';
+                alertsContainer.innerHTML = alertsHTML;
+            } else {
+                alertsContainer.innerHTML = '';
+            }
+        }
+
+        // Charger les produits
+        function loadProducts() {
+            // Pour le select des mouvements
+            const select = document.getElementById('movementProduct');
+            select.innerHTML = '<option value="">Sélectionner un produit</option>';
+            stockData.products.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = `${p.name} (${p.stock} ${p.unit})`;
+                select.appendChild(option);
+            });
+            
+            // Pour la liste des produits
+            const productsList = document.getElementById('productsList');
+            productsList.innerHTML = '';
+            
+            stockData.products.forEach(p => {
+                const value = p.stock * p.price;
+                const status = p.stock < p.min ? 'danger' : p.stock === p.min ? 'warning' : 'success';
+                const icon = status === 'danger' ? 'fa-exclamation-triangle' : 
+                            status === 'warning' ? 'fa-exclamation-circle' : 'fa-check-circle';
+                const color = status === 'danger' ? '#e74c3c' : 
+                             status === 'warning' ? '#f39c12' : '#27ae60';
+                
+                productsList.innerHTML += `
+                    <div class="product-item">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <strong>${p.name}</strong><br>
+                                <small>Stock: ${p.stock} ${p.unit} | Min: ${p.min} ${p.unit}</small><br>
+                                <small>Prix: ${formatCFA(p.price)}</small>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: ${color};">
+                                    <i class="fas ${icon}"></i>
+                                </div>
+                                <div style="font-weight: bold; margin-top: 5px;">
+                                    ${formatCFA(value)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Sauvegarder les données
+        async function saveData() {
+            if (!currentRestaurant) return;
+            
+            // Sauvegarder localement
+            localStorage.setItem('restoStockData_' + currentRestaurant.id, JSON.stringify(stockData));
+            
+            // Sauvegarder sur Firebase si activé
+            if (firebaseInitialized) {
+                try {
+                    const ref = firebase.database().ref('restaurants/' + currentRestaurant.id);
+                    await ref.set(stockData);
+                    console.log('Données sauvegardées sur Firebase');
+                } catch (error) {
+                    console.log('Erreur Firebase:', error);
+                }
+            }
+        }
+
+        // Événements
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Ajout produit
+        document.getElementById('addProductBtn').addEventListener('click', function() {
+            document.getElementById('productModal').style.display = 'flex';
+        });
+
+        document.getElementById('closeModal').addEventListener('click', function() {
+            document.getElementById('productModal').style.display = 'none';
+        });
+
+        // Formulaire produit
+        document.getElementById('productForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = this.productName.value.trim();
+            const unit = this.productUnit.value;
+            const min = parseInt(this.minStock.value);
+            const stock = parseInt(this.initialStock.value) || 0;
+            const price = parseInt(this.productPrice.value) || 0;
+            
+            if (!name || !unit || isNaN(min)) {
+                alert('Veuillez remplir les champs obligatoires');
+                return;
+            }
+            
+            // Ajouter le produit
+            const newProduct = {
+                id: stockData.products.length + 1,
+                name: name,
+                unit: unit,
+                min: min,
+                stock: stock,
+                price: price
+            };
+            
+            stockData.products.push(newProduct);
+            await saveData();
+            
+            // Mettre à jour l'interface
+            updateUI();
+            loadProducts();
+            
+            // Fermer modal
+            document.getElementById('productModal').style.display = 'none';
+            this.reset();
+            
+            alert('Produit ajouté avec succès!');
+        });
+
+        // Formulaire mouvement
+        document.getElementById('movementForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const productId = parseInt(this.movementProduct.value);
+            const type = this.movementType.value;
+            const quantity = parseInt(this.movementQuantity.value);
+            const price = parseInt(this.movementPrice.value);
+            const date = this.movementDate.value;
+            
+            if (!productId || !quantity || !price || !date) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+            
+            const product = stockData.products.find(p => p.id === productId);
+            if (!product) {
+                alert('Produit non trouvé');
+                return;
+            }
+            
+            // Mettre à jour le stock
+            if (type === 'entry') {
+                product.stock += quantity;
+            } else {
+                if (product.stock < quantity) {
+                    alert(`Stock insuffisant! Stock actuel: ${product.stock} ${product.unit}`);
+                    return;
+                }
+                product.stock -= quantity;
+            }
+            
+            // Mettre à jour le prix
+            if (price > 0) {
+                product.price = price;
+            }
+            
+            // Ajouter le mouvement
+            stockData.movements.push({
+                id: stockData.movements.length + 1,
+                date: date,
+                productId: productId,
+                type: type,
+                quantity: quantity,
+                price: price,
+                productName: product.name
+            });
+            
+            await saveData();
+            updateUI();
+            loadProducts();
+            
+            this.reset();
+            this.movementDate.value = new Date().toISOString().split('T')[0];
+            
+            alert('Mouvement enregistré!');
+        });
+
+        // Déconnexion
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('currentRestaurant');
+            location.reload();
+        });
+
+        // Initialiser la date
+        window.addEventListener('load', function() {
+            document.getElementById('movementDate').value = new Date().toISOString().split('T')[0];
+            
+            // Vérifier connexion existante
+            const saved = localStorage.getItem('currentRestaurant');
+            if (saved) {
+                try {
+                    currentRestaurant = JSON.parse(saved);
+                    const localData = localStorage.getItem('restoStockData_' + currentRestaurant.id);
+                    if (localData) {
+                        stockData = JSON.parse(localData);
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('appContent').style.display = 'block';
+                        document.getElementById('restaurantTitle').textContent = currentRestaurant.name;
+                        updateUI();
+                        loadProducts();
+                    }
+                } catch (e) {
+                    console.error('Erreur:', e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
